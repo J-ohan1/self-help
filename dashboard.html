@@ -22,64 +22,47 @@
   </div>
 
   <script>
-    const user = localStorage.getItem('currentUser');
-    const tasksContainer = document.getElementById('tasks');
-    const checkboxes = tasksContainer.querySelectorAll('input[type="checkbox"]');
-    const today = new Date().toISOString().split('T')[0];
+  const user = localStorage.getItem('currentUser');
+  const tasksContainer = document.getElementById('tasks');
+  const checkboxes = tasksContainer.querySelectorAll('input[type="checkbox"]');
+  const today = new Date().toISOString().split('T')[0];
+  const endpoint = "https://script.google.com/macros/s/AKfycbz5PHhvb00GO6tIjVbe6RZRbGVrqwrCenzhrIsA-g8PtKQoiXrOZQBvJwk5c5HBU_6UOg/exec";
 
-    if (!user) {
-      window.location.href = "login.html";
-    }
+  if (!user) window.location.href = "login.html";
+  document.getElementById('welcome').textContent = `Welcome, ${user}`;
 
-    document.getElementById('welcome').textContent = `Welcome, ${user}`;
+  const examDate = new Date("2027-01-15");
+  const now = new Date();
+  const daysLeft = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
+  document.getElementById('countdown').textContent = `${daysLeft} days left for the exam`;
 
-    // Countdown to exam
-    const examDate = new Date("2027-01-15");
-    const now = new Date();
-    const daysLeft = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
-    document.getElementById('countdown').textContent = `${daysLeft} days left for the exam`;
-
-    // Load saved tasks
-    const data = JSON.parse(localStorage.getItem('taskData') || '{}');
-    const userData = data[user] || {};
-    const todayTasks = userData[today] || [];
-
-    checkboxes.forEach(cb => {
-      cb.checked = todayTasks.includes(cb.value);
-      cb.addEventListener('change', () => {
-        const checked = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
-        if (!data[user]) data[user] = {};
-        data[user][today] = checked;
-        localStorage.setItem('taskData', JSON.stringify(data));
-        drawGraph();
-      });
+  // Save to Google Sheets on checkbox change
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+      sendData(user, today, checked);
     });
+  });
 
-    function drawGraph() {
-      const ctx = document.getElementById('taskGraph').getContext('2d');
-      ctx.clearRect(0, 0, 600, 200);
-      const history = data[user] || {};
-      const dates = [...Array(7)].map((_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (6 - i));
-        return d.toISOString().split('T')[0];
-      });
+  function sendData(username, date, tasks) {
+    fetch(endpoint, {
+      method: "POST",
+      body: JSON.stringify({ username, date, tasks }),
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log("Saved to sheet:", data);
+    })
+    .catch(err => {
+      console.error("Error saving to sheet:", err);
+    });
+  }
 
-      ctx.strokeStyle = "white";
-      ctx.beginPath();
-      dates.forEach((d, i) => {
-        const completed = (history[d] || []).length;
-        const y = 200 - (completed / checkboxes.length) * 200;
-        const x = i * 90;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-        ctx.fillStyle = "white";
-        ctx.fillRect(x - 2, y - 2, 4, 4);
-      });
-      ctx.stroke();
-    }
+  // Graph disabled since data is now in Google Sheets (optional to add Sheet API read access)
+</script>
 
-    drawGraph();
-  </script>
 </body>
 </html>
