@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Blur - Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard">
+    <h1>The Blur - Daily Tracker</h1>
+    <p id="welcome"></p>
+    <p id="countdown"></p>
+    <div id="tasks">
+      <label><input type="checkbox" value="Eat"> Eat</label>
+      <label><input type="checkbox" value="Do Homework"> Do Homework</label>
+      <label><input type="checkbox" value="Do Study"> Do Study</label>
+      <label><input type="checkbox" value="Workout"> Workout</label>
+      <label><input type="checkbox" value="Productive Stuff"> Productive Stuff</label>
+      <label><input type="checkbox" value="Other Stuff"> Other Stuff</label>
+    </div>
+    <canvas id="taskGraph" width="600" height="200"></canvas>
+  </div>
+
+  <script>
+    const user = localStorage.getItem('currentUser');
+    const tasksContainer = document.getElementById('tasks');
+    const checkboxes = tasksContainer.querySelectorAll('input[type="checkbox"]');
+    const today = new Date().toISOString().split('T')[0];
+
+    if (!user) {
+      window.location.href = "login.html";
+    }
+
+    document.getElementById('welcome').textContent = `Welcome, ${user}`;
+
+    // Countdown to exam
+    const examDate = new Date("2027-01-15");
+    const now = new Date();
+    const daysLeft = Math.ceil((examDate - now) / (1000 * 60 * 60 * 24));
+    document.getElementById('countdown').textContent = `${daysLeft} days left for the exam`;
+
+    // Load saved tasks
+    const data = JSON.parse(localStorage.getItem('taskData') || '{}');
+    const userData = data[user] || {};
+    const todayTasks = userData[today] || [];
+
+    checkboxes.forEach(cb => {
+      cb.checked = todayTasks.includes(cb.value);
+      cb.addEventListener('change', () => {
+        const checked = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+        if (!data[user]) data[user] = {};
+        data[user][today] = checked;
+        localStorage.setItem('taskData', JSON.stringify(data));
+        drawGraph();
+      });
+    });
+
+    function drawGraph() {
+      const ctx = document.getElementById('taskGraph').getContext('2d');
+      ctx.clearRect(0, 0, 600, 200);
+      const history = data[user] || {};
+      const dates = [...Array(7)].map((_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        return d.toISOString().split('T')[0];
+      });
+
+      ctx.strokeStyle = "white";
+      ctx.beginPath();
+      dates.forEach((d, i) => {
+        const completed = (history[d] || []).length;
+        const y = 200 - (completed / checkboxes.length) * 200;
+        const x = i * 90;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+        ctx.fillStyle = "white";
+        ctx.fillRect(x - 2, y - 2, 4, 4);
+      });
+      ctx.stroke();
+    }
+
+    drawGraph();
+  </script>
+</body>
+</html>

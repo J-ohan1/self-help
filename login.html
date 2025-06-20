@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Blur - Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-container">
+    <h1>Login to The Blur</h1>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <p id="login-error"></p>
+  </div>
+
+  <script>
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const validUsers = {
+        "Aa@270210": "lolaarav",
+        "Ad@202510": "adeshjha"
+      };
+
+      if (validUsers[username] === password) {
+        localStorage.setItem('currentUser', username);
+        window.location.href = "dashboard.html";
+      } else {
+        document.getElementById('login-error').textContent = "Invalid credentials";
+      }
+    }
+  </script>
+</body>
+</html>
